@@ -2,9 +2,8 @@ package org.sample;
 
 import org.openjdk.jmh.annotations.*;
 
-import java.util.Objects;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 /**
  * Fibonacci Naive Recursive vs Memoization Recursive vs Bottom-Up vs Stream API
@@ -22,66 +21,96 @@ import java.util.stream.Stream;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Measurement(iterations = 3, time = 2)
 public class FibonacciBenchmark {
+    private static final HashMap<Integer, Integer> memo = new HashMap<>();
+    private static final HashMap<Integer, Long> memoIterative = new HashMap<>();
 
-    public int fibNaiveRecursive(int x) {
-        return (x == 1 || x == 2)?1:fibNaiveRecursive(x - 1) + fibNaiveRecursive(x - 2);
+    public static int fibRecursive(int n) {
+        if (n <= 1) return n;
+        return fibRecursive(n - 1) + fibRecursive(n - 2);
     }
 
-    public int fibTailRecursive(int x) {
-        return fibTailRec(x, 0,1);
+    public static int fibRecursiveMemoization(int n) {
+        if (n == 0 || n == 1) {
+            return n;
+        }
+        if (memo.containsKey(n)) {
+            return memo.get(n);
+        }
+        int result = fibRecursiveMemoization(n - 1) + fibRecursiveMemoization(n - 2);
+        memo.put(n, result);
+        return result;
     }
 
-    private int fibTailRec(int n, int a, int b) {
-        if (n == 0) return a;
-        if (n == 1) return b;
-        return fibTailRec(n - 1, b, a + b);
+    public static int fibIterative(int n) {
+        if (n == 0) {
+            return 0;
+        }
+        if (n == 1) {
+            return 1;
+        }
+        int prev = 0;
+        int curr = 1;
+        for (int i = 2; i <= n; i++) {
+            int next = prev + curr;
+            prev = curr;
+            curr = next;
+        }
+        return curr;
     }
 
-    public int fibMemoization(int x, int[] mem) {
-        if (mem[x] != 0) return mem[x];
-        if (x == 1 || x == 2)  return 1;
-        int n = fibMemoization(x - 1, mem) + fibMemoization(x - 2,mem);
-        mem[x] = n;
-        return n;
+    public static long fibIterativeMemoization(int n) {
+        // Check if the result is already stored in the memo. If it is, return it.
+        if (memoIterative.containsKey(n)) {
+            return memoIterative.get(n);
+        }
+
+        // If n is 0 or 1, the Fibonacci number is n.
+        if (n == 0 || n == 1) {
+            return n;
+        }
+
+        // Calculate the Fibonacci number using the iterative approach.
+        long result = 0;
+        long a = 0;
+        long b = 1;
+        for (int i = 2; i <= n; i++) {
+            result = a + b;
+            a = b;
+            b = result;
+        }
+
+        // Store the result in the memo before returning it.
+        memoIterative.put(n, result);
+        return result;
     }
 
-    public int fibBottomUp(int x) {
-        if (x == 1 || x == 2) return 1;
-        int[] memory = new int[x + 1];
-        memory[1] = 1;
-        memory[2] = 1;
-        for (int i = 3; i <= x; i++) memory[i] = memory[i - 1] + memory[i - 2];
-        return memory[x];
-    }
-
-    public int fibStream(int n) {
-          return Objects.requireNonNull(Stream.iterate(new Integer[]{0, 1}, s -> new Integer[]{s[1], s[0] + s[1]})
-                  .limit(n)
-                  .reduce((x, y) -> y).orElse(null))[1];
+    public static long fibBinetFormula(int n) {
+        double phi = (1 + Math.sqrt(5)) / 2;
+        return Math.round(Math.pow(phi, n) / Math.sqrt(5));
     }
 
     @Benchmark
-    public void naiveRecursive() {
-        fibNaiveRecursive(45);
+    public void recursive() {
+        fibRecursive(10);
     }
 
     @Benchmark
-    public void tailRecursive(){
-        fibTailRecursive(45);
+    public void recursiveMemoization(){
+        fibRecursiveMemoization(10);
     }
 
     @Benchmark
-    public void memoization() {
-        fibMemoization(45,new int[45+1]);
+    public void iterative() {
+        fibIterative(10);
     }
 
     @Benchmark
-    public void bottomUp() {
-        fibBottomUp(45);
+    public void iterativeMemoization() {
+        fibIterativeMemoization(10);
     }
 
     @Benchmark
-    public void stream() {
-        fibStream(45);
+    public void binetFormula() {
+        fibBinetFormula(10);
     }
 }
